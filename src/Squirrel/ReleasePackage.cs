@@ -41,20 +41,30 @@ namespace Squirrel
                 return true; // I CAN'T DEAL WITH THIS
 
             bool minVersion;
-            if (versionSpec.MinVersion == null) {
+            if (versionSpec.MinVersion == null)
+            {
                 minVersion = true; // no preconditon? LET'S DO IT
-            } else if (versionSpec.IsMinInclusive) {
+            }
+            else if (versionSpec.IsMinInclusive)
+            {
                 minVersion = version >= versionSpec.MinVersion;
-            } else {
+            }
+            else
+            {
                 minVersion = version > versionSpec.MinVersion;
             }
 
             bool maxVersion;
-            if (versionSpec.MaxVersion == null) {
+            if (versionSpec.MaxVersion == null)
+            {
                 maxVersion = true; // no preconditon? LET'S DO IT
-            } else if (versionSpec.IsMaxInclusive) {
+            }
+            else if (versionSpec.IsMaxInclusive)
+            {
                 maxVersion = version <= versionSpec.MaxVersion;
-            } else {
+            }
+            else
+            {
                 maxVersion = version < versionSpec.MaxVersion;
             }
 
@@ -68,7 +78,8 @@ namespace Squirrel
         {
             InputPackageFile = inputPackageFile;
 
-            if (isReleasePackage) {
+            if (isReleasePackage)
+            {
                 ReleasePackageFile = inputPackageFile;
             }
         }
@@ -76,8 +87,10 @@ namespace Squirrel
         public string InputPackageFile { get; protected set; }
         public string ReleasePackageFile { get; protected set; }
 
-        public string SuggestedReleaseFileName {
-            get {
+        public string SuggestedReleaseFileName
+        {
+            get
+            {
                 var zp = new ZipPackage(InputPackageFile);
                 return String.Format("{0}-{1}-full.nupkg", zp.Id, zp.Version);
             }
@@ -90,7 +103,8 @@ namespace Squirrel
             Contract.Requires(!String.IsNullOrEmpty(outputFile));
             releaseNotesProcessor = releaseNotesProcessor ?? (x => (new Markdown()).Transform(x));
 
-            if (ReleasePackageFile != null) {
+            if (ReleasePackageFile != null)
+            {
                 return ReleasePackageFile;
             }
 
@@ -100,7 +114,8 @@ namespace Squirrel
 
             // NB: Our test fixtures use packages that aren't SemVer compliant, 
             // we don't really care that they aren't valid
-            if (!ModeDetector.InUnitTestRunner() && !SemanticVersion.TryParseStrict(package.Version.ToString(), out dontcare)) {
+            if (!ModeDetector.InUnitTestRunner() && !SemanticVersion.TryParseStrict(package.Version.ToString(), out dontcare))
+            {
                 throw new Exception(
                     String.Format(
                         "Your package version is currently {0}, which is *not* SemVer-compatible, change this to be a SemVer version number",
@@ -111,14 +126,17 @@ namespace Squirrel
             // but given this is a simple package we only
             // ever expect one entry here (crash hard otherwise)
             var frameworks = package.GetSupportedFrameworks();
-            if (frameworks.Count() > 1) {
+            if (frameworks.Count() > 1)
+            {
                 var platforms = frameworks
                     .Aggregate(new StringBuilder(), (sb, f) => sb.Append(f.ToString() + "; "));
 
                 throw new InvalidOperationException(String.Format(
                     "The input package file {0} targets multiple platforms - {1} - and cannot be transformed into a release package.", InputPackageFile, platforms));
 
-            } else if (!frameworks.Any()) {
+            }
+            else if (!frameworks.Any())
+            {
                 throw new InvalidOperationException(String.Format(
                     "The input package file {0} targets no platform and cannot be transformed into a release package.", InputPackageFile));
             }
@@ -136,7 +154,8 @@ namespace Squirrel
 
             string tempPath = null;
 
-            using (Utility.WithTempDirectory(out tempPath, null)) {
+            using (Utility.WithTempDirectory(out tempPath, null))
+            {
                 var tempDir = new DirectoryInfo(tempPath);
 
                 extractZipWithEscaping(InputPackageFile, tempPath).Wait();
@@ -150,7 +169,8 @@ namespace Squirrel
                 removeDependenciesFromPackageSpec(specPath);
                 removeDeveloperDocumentation(tempDir);
 
-                if (releaseNotesProcessor != null) {
+                if (releaseNotesProcessor != null)
+                {
                     renderReleaseNotesMarkdown(specPath, releaseNotesProcessor);
                 }
 
@@ -167,10 +187,13 @@ namespace Squirrel
 
         static Task extractZipWithEscaping(string zipFilePath, string outFolder)
         {
-            return Task.Run(() => {
+            return Task.Run(() =>
+            {
                 using (var za = ZipArchive.Open(zipFilePath))
-                using (var reader = za.ExtractAllEntries()) {
-                    while (reader.MoveToNextEntry()) {
+                using (var reader = za.ExtractAllEntries())
+                {
+                    while (reader.MoveToNextEntry())
+                    {
                         var parts = reader.Entry.Key.Split('\\', '/').Select(x => Uri.UnescapeDataString(x));
                         var decoded = String.Join(Path.DirectorySeparatorChar.ToString(), parts);
 
@@ -178,10 +201,14 @@ namespace Squirrel
                         var fullTargetDir = Path.GetDirectoryName(fullTargetFile);
                         Directory.CreateDirectory(fullTargetDir);
 
-                        Utility.Retry(() => {
-                            if (reader.Entry.IsDirectory) {
+                        Utility.Retry(() =>
+                        {
+                            if (reader.Entry.IsDirectory)
+                            {
                                 Directory.CreateDirectory(Path.Combine(outFolder, decoded));
-                            } else {
+                            }
+                            else
+                            {
                                 reader.WriteEntryToFile(Path.Combine(outFolder, decoded));
                             }
                         }, 5);
@@ -194,10 +221,13 @@ namespace Squirrel
         {
             var re = new Regex(@"lib[\\\/][^\\\/]*[\\\/]", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
-            return Task.Run(() => {
+            return Task.Run(() =>
+            {
                 using (var za = ZipArchive.Open(zipFilePath))
-                using (var reader = za.ExtractAllEntries()) {
-                    while (reader.MoveToNextEntry()) {
+                using (var reader = za.ExtractAllEntries())
+                {
+                    while (reader.MoveToNextEntry())
+                    {
                         var parts = reader.Entry.Key.Split('\\', '/');
                         var decoded = String.Join(Path.DirectorySeparatorChar.ToString(), parts);
 
@@ -209,7 +239,8 @@ namespace Squirrel
                         Directory.CreateDirectory(fullTargetDir);
 
                         var failureIsOkay = false;
-                        if (!reader.Entry.IsDirectory && decoded.Contains("_ExecutionStub.exe")) {
+                        if (!reader.Entry.IsDirectory && decoded.Contains("_ExecutionStub.exe"))
+                        {
                             // NB: On upgrade, many of these stubs will be in-use, nbd tho.
                             failureIsOkay = true;
 
@@ -220,15 +251,22 @@ namespace Squirrel
                             LogHost.Default.Info("Rigging execution stub for {0} to {1}", decoded, fullTargetFile);
                         }
 
-                        try {
-                            Utility.Retry(() => {
-                                if (reader.Entry.IsDirectory) {
+                        try
+                        {
+                            Utility.Retry(() =>
+                            {
+                                if (reader.Entry.IsDirectory)
+                                {
                                     Directory.CreateDirectory(fullTargetFile);
-                                } else {
+                                }
+                                else
+                                {
                                     reader.WriteEntryToFile(fullTargetFile);
                                 }
                             }, 5);
-                        } catch (Exception e) {
+                        }
+                        catch (Exception e)
+                        {
                             if (!failureIsOkay) throw;
                             LogHost.Default.WarnException("Can't write execution stub, probably in use", e);
                         }
@@ -236,16 +274,98 @@ namespace Squirrel
                 }
             });
         }
+        /// <summary>
+        /// Returns a relative path string from a full path based on a base path
+        /// provided.
+        /// </summary>
+        /// <param name="fullPath">The path to convert. Can be either a file or a directory</param>
+        /// <param name="basePath">The base path on which relative processing is based. Should be a directory.</param>
+        /// <returns>
+        /// String of the relative path.
+        /// 
+        /// Examples of returned values:
+        ///  test.txt, ..\test.txt, ..\..\..\test.txt, ., .., subdir\test.txt
+        /// </returns>
+        public static string GetRelativePath(string fullPath, string basePath)
+        {
+            // Require trailing backslash for path
+            if (!basePath.EndsWith("\\"))
+                basePath += "\\";
+
+            Uri baseUri = new Uri(basePath);
+            Uri fullUri = new Uri(fullPath);
+
+            Uri relativeUri = baseUri.MakeRelativeUri(fullUri);
+
+            // Uri's use forward slashes so convert back to backward slashes
+            return relativeUri.ToString().Replace("/", "\\");
+
+        }
+
+        public static void ConvertNuGetWorkingDirectoryForInstall(string workingPath, string outFolder, string rootPackageFolder)
+        {
+            var re = new Regex(@"lib[\\\/][^\\\/]*[\\\/]", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+            foreach (var file in Directory.EnumerateFileSystemEntries(workingPath, "*.*", SearchOption.AllDirectories))
+            {
+                var parts = GetRelativePath(file, workingPath).Split('\\', '/');
+                var decoded = String.Join(Path.DirectorySeparatorChar.ToString(), parts);
+
+                if (!re.IsMatch(decoded)) continue;
+                decoded = re.Replace(decoded, "", 1);
+
+                var fullTargetFile = Path.Combine(outFolder, decoded);
+                var fullTargetDir = Path.GetDirectoryName(fullTargetFile);
+                Directory.CreateDirectory(fullTargetDir);
+
+                var failureIsOkay = false;
+                if (decoded.Contains("_ExecutionStub.exe"))
+                {
+                    // NB: On upgrade, many of these stubs will be in-use, nbd tho.
+                    failureIsOkay = true;
+
+                    fullTargetFile = Path.Combine(
+                        rootPackageFolder,
+                        Path.GetFileName(decoded).Replace("_ExecutionStub.exe", ".exe"));
+
+                    LogHost.Default.Info("Rigging execution stub for {0} to {1}", decoded, fullTargetFile);
+                }
+
+                try
+                {
+                    Utility.Retry(() =>
+                    {
+                        FileAttributes attr = File.GetAttributes(file);
+
+                        if (attr.HasFlag(FileAttributes.Directory))
+                        {
+                            Directory.CreateDirectory(fullTargetFile);
+                        }
+                        else
+                        {
+                            File.Copy(file, fullTargetFile, true);
+                        }
+                    }, 5);
+                }
+                catch (Exception e)
+                {
+                    if (!failureIsOkay) throw;
+                    LogHost.Default.WarnException("Can't write execution stub, probably in use", e);
+                }
+            }
+        }
 
         void extractDependentPackages(IEnumerable<IPackage> dependencies, DirectoryInfo tempPath, FrameworkName framework)
         {
-            dependencies.ForEach(pkg => {
+            dependencies.ForEach(pkg =>
+            {
                 this.Log().Info("Scanning {0}", pkg.Id);
 
-                pkg.GetLibFiles().ForEach(file => {
+                pkg.GetLibFiles().ForEach(file =>
+                {
                     var outPath = new FileInfo(Path.Combine(tempPath.FullName, file.Path));
 
-                    if (!VersionUtility.IsCompatible(framework , new[] { file.TargetFramework }))
+                    if (!VersionUtility.IsCompatible(framework, new[] { file.TargetFramework }))
                     {
                         this.Log().Info("Ignoring {0} as the target framework is not compatible", outPath);
                         return;
@@ -253,7 +373,8 @@ namespace Squirrel
 
                     Directory.CreateDirectory(outPath.Directory.FullName);
 
-                    using (var of = File.Create(outPath.FullName)) {
+                    using (var of = File.Create(outPath.FullName))
+                    {
                         this.Log().Info("Writing {0} to {1}", file.Path, outPath);
                         file.GetStream().CopyTo(of);
                     }
@@ -284,7 +405,8 @@ namespace Squirrel
                 .OfType<XmlElement>()
                 .FirstOrDefault(x => x.Name.ToLowerInvariant() == "releasenotes");
 
-            if (releaseNotes == null) {
+            if (releaseNotes == null)
+            {
                 this.Log().Info("No release notes found in {0}", specPath);
                 return;
             }
@@ -302,7 +424,8 @@ namespace Squirrel
 
             var metadata = xdoc.DocumentElement.FirstChild;
             var dependenciesNode = metadata.ChildNodes.OfType<XmlElement>().FirstOrDefault(x => x.Name.ToLowerInvariant() == "dependencies");
-            if (dependenciesNode != null) {
+            if (dependenciesNode != null)
+            {
                 metadata.RemoveChild(dependenciesNode);
             }
 
@@ -323,16 +446,19 @@ namespace Squirrel
                             || x.TargetFramework == frameworkName)
                 .SelectMany(x => x.Dependencies);
 
-            return deps.SelectMany(dependency => {
+            return deps.SelectMany(dependency =>
+            {
                 var ret = matchPackage(packageRepository, dependency.Id, dependency.VersionSpec);
 
-                if (ret == null) {
+                if (ret == null)
+                {
                     var message = String.Format("Couldn't find file for package in {1}: {0}", dependency.Id, packageRepository.Source);
                     this.Log().Error(message);
                     throw new Exception(message);
                 }
 
-                if (packageCache.Contains(ret.GetFullName())) {
+                if (packageCache.Contains(ret.GetFullName()))
+                {
                     return Enumerable.Empty<IPackage>();
                 }
 
@@ -357,7 +483,8 @@ namespace Squirrel
             ContentType.Merge(doc);
             ContentType.Clean(doc);
 
-            using (var sw = new StreamWriter(path, false, Encoding.UTF8)) {
+            using (var sw = new StreamWriter(path, false, Encoding.UTF8))
+            {
                 doc.Save(sw);
             }
         }
