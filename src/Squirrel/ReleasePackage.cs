@@ -275,6 +275,7 @@ namespace Squirrel
             });
         }
         /// <summary>
+        /// Taken from https://stackoverflow.com/a/340454
         /// Returns a relative path string from a full path based on a base path
         /// provided.
         /// </summary>

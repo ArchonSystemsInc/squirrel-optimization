@@ -335,46 +335,6 @@ namespace Squirrel
                 });
             }
 
-            //async Task<ReleaseEntry> createFullPackagesFromDeltasBackup(IEnumerable<ReleaseEntry> releasesToApply, ReleaseEntry currentVersion)
-            //{
-            //    Contract.Requires(releasesToApply != null);
-
-            //    // If there are no remote releases at all, bail
-            //    if (!releasesToApply.Any()) {
-            //        return null;
-            //    }
-
-            //    // If there are no deltas in our list, we're already done
-            //    if (releasesToApply.All(x => !x.IsDelta)) {
-            //        return releasesToApply.MaxBy(x => x.Version).FirstOrDefault();
-            //    }
-
-            //    if (!releasesToApply.All(x => x.IsDelta)) {
-            //        throw new Exception("Cannot apply combinations of delta and full packages");
-            //    }
-
-            //    // Smash together our base full package and the nearest delta
-            //    var ret = await Task.Run(() => {
-            //        var basePkg = new ReleasePackage(Path.Combine(rootAppDirectory, "packages", currentVersion.Filename));
-            //        var deltaPkg = new ReleasePackage(Path.Combine(rootAppDirectory, "packages", releasesToApply.First().Filename));
-
-            //        var deltaBuilder = new DeltaPackageBuilder(Directory.GetParent(this.rootAppDirectory).FullName);
-
-            //        return deltaBuilder.ApplyDeltaPackage(basePkg, deltaPkg,
-            //            Regex.Replace(deltaPkg.InputPackageFile, @"-delta.nupkg$", ".nupkg", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant));
-            //    });
-
-            //    if (releasesToApply.Count() == 1) {
-            //        return ReleaseEntry.GenerateFromFile(ret.InputPackageFile);
-            //    }
-
-            //    var fi = new FileInfo(ret.InputPackageFile);
-            //    var entry = ReleaseEntry.GenerateFromFile(fi.OpenRead(), fi.Name);
-
-            //    // Recursively combine the rest of them
-            //    return await createFullPackagesFromDeltas(releasesToApply.Skip(1), entry);
-            //}
-
             async Task<string> installFromDelta(UpdateInfo updateInfo)
             {
                 IEnumerable<ReleaseEntry> releasesToApply = updateInfo.ReleasesToApply;
