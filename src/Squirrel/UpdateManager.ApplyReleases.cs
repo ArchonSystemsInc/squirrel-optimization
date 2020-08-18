@@ -15,7 +15,8 @@ using Squirrel.Shell;
 using Microsoft.Win32;
 using SharpCompress.Readers;
 using SharpCompress.Archives.Zip;
-using System.Web.UI.WebControls;
+using SharpCompress.Compressors.Deflate;
+using SharpCompress.Archives;
 
 namespace Squirrel
 {
@@ -402,12 +403,13 @@ namespace Squirrel
                 string finalOutputPath = getDirectoryForRelease(releasesToApply.Last().Version).ToString();
                 string localAppDirectory = Directory.GetParent(this.rootAppDirectory).FullName;
                 string workingPath;
-                
+
                 using (Utility.WithTempDirectory(out workingPath, localAppDirectory))
                 {
                     var opts = new ExtractionOptions() { ExtractFullPath = true, Overwrite = true, PreserveFileTime = true };
 
                     //Extract base file to working folder
+                    this.Log().Info("Extracting base file to working folder {0}", currentVersion.Filename);
                     using (var za = ZipArchive.Open(Path.Combine(rootAppDirectory, "packages", currentVersion.Filename)))
                     using (var reader = za.ExtractAllEntries())
                     {
@@ -417,9 +419,21 @@ namespace Squirrel
                     //Apply each incremental release
                     foreach (var delta in releasesToApply)
                     {
+                        this.Log().Info("Applying delta release {0} to working folder", delta.Filename);
                         var deltaPkg = new ReleasePackage(Path.Combine(rootAppDirectory, "packages", delta.Filename));
                         var deltaBuilder = new DeltaPackageBuilder(Directory.GetParent(this.rootAppDirectory).FullName);
                         deltaBuilder.ApplyDeltaPackageToWorkingDirectory(workingPath, deltaPkg);
+                    }
+
+                    //Save the final thing into a local full package
+                    var fullPackageOutput = Regex.Replace(releasesToApply.Last().Filename, @"-delta.nupkg$", ".nupkg", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                    this.Log().Info("Repacking into full package: {0}", fullPackageOutput);
+                    using (var za = ZipArchive.Create())
+                    using (var tgt = File.OpenWrite(fullPackageOutput))
+                    {
+                        za.DeflateCompressionLevel = CompressionLevel.BestSpeed;
+                        za.AddAllFromDirectory(workingPath);
+                        za.SaveTo(tgt);
                     }
 
                     //Convert this from NuGet package format to raw folder format
