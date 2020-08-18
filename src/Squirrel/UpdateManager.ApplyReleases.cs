@@ -426,7 +426,9 @@ namespace Squirrel
                     }
 
                     //Save the final thing into a local full package
-                    var fullPackageOutput = Regex.Replace(releasesToApply.Last().Filename, @"-delta.nupkg$", ".nupkg", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                    var lastDeltaPkgFullPath = Path.Combine(rootAppDirectory, "packages", releasesToApply.Last().Filename);
+
+                    var fullPackageOutput = Regex.Replace(lastDeltaPkgFullPath, @"-delta.nupkg$", ".nupkg", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                     this.Log().Info("Repacking into full package: {0}", fullPackageOutput);
                     using (var za = ZipArchive.Create())
                     using (var tgt = File.OpenWrite(fullPackageOutput))
